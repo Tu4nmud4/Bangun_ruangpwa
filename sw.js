@@ -1,4 +1,4 @@
-const CACHE='bangun-ruang-3d-v1';
+const CACHE='bangun-ruang-3d-v2';
 const ASSETS=['/index.html','/manifest.json'];
 
 self.addEventListener('install',e=>{

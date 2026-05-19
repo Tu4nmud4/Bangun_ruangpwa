@@ -1,22 +1,648 @@
-{
-  "name": "📦 Bangun Ruang 3D - Interaktif",
-  "short_name": "3D Space",
-  "start_url": "/index.html",
-  "display": "standalone",
-  "background_color": "#0f0f1a",
-  "theme_color": "#6C63FF",
-  "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📦 Bangun Ruang 3D</title>
+<meta name="description" content="Media Pembelajaran Interaktif - Kubus & Balok">
+<meta name="theme-color" content="#6C63FF">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+<style>
+/* ===== RESET & BASE ===== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f1a;--card:#1a1a2e;--accent:#6C63FF;--accent2:#00D9FF;
+  --gold:#FFD700;--text:#e8e8f0;--text-dim:#888;--danger:#ff4757;
+  --success:#2ed573;--radius:16px;--shadow:0 8px 32px rgba(108,99,255,.2);
+  --font:'Segoe UI',system-ui,-apple-system,sans-serif;
 }
+[data-theme="light"]{
+  --bg:#f0f2ff;--card:#fff;--text:#1a1a2e;--text-dim:#555;
+  --shadow:0 8px 32px rgba(108,99,255,.1);
+}
+
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--text);
+  min-height:100vh;overflow-x:hidden;
+  background-image:
+    radial-gradient(ellipse at 20% 50%,rgba(108,99,255,.08) 0,transparent 50%),
+    radial-gradient(ellipse at 80% 20%,rgba(0,217,255,.06) 0,transparent 50%);
+}
+
+/* ===== NAV ===== */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(15,15,26,.85);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(108,99,255,.2);
+  padding:0 1rem;
+}
+.nav-inner{
+  max-width:800px;margin:0 auto;display:flex;align-items:center;
+  height:56px;gap:4px;
+}
+nav button{
+  background:none;border:none;color:var(--text-dim);
+  padding:8px 14px;border-radius:10px;font-size:.85rem;cursor:pointer;
+  transition:.2s;font-weight:600;
+}
+nav button.active{color:var(--accent);background:rgba(108,99,255,.15)}
+nav .logo{font-size:1.2rem;margin-right:auto}
+nav .theme-toggle{background:none;border:none;font-size:1.2rem;cursor:pointer;padding:4px}
+
+/* ===== MAIN ===== */
+main{max-width:800px;margin:0 auto;padding:1rem 1rem 100px}
+section{display:none;animation:fadeIn .4s}
+section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+
+/* ===== CARDS ===== */
+.card{
+  background:var(--card);border-radius:var(--radius);
+  padding:1.5rem;margin-bottom:1rem;
+  box-shadow:var(--shadow);border:1px solid rgba(108,99,255,.1);
+  transition:.3s;
+}
+.card:hover{border-color:rgba(108,99,255,.25)}
+h2{font-size:1.3rem;margin-bottom:.7rem;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+h3{color:var(--accent2);margin:1rem 0 .4rem;font-size:1rem}
+
+/* ===== 3D CANVAS ===== */
+.canvas-wrap{
+  display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-start;
+  justify-content:center;
+}
+.canvas-box{
+  flex:1;min-width:280px;max-width:350px;
+  aspect-ratio:1;position:relative;
+  background:linear-gradient(145deg,#111,#222);
+  border-radius:var(--radius);overflow:hidden;
+  cursor:grab;box-shadow:0 0 40px rgba(108,99,255,.2);
+}
+.canvas-box:active{cursor:grabbing}
+.canvas-box canvas{width:100%;height:100%;display:block}
+.canvas-label{
+  position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.7);color:var(--gold);padding:4px 14px;
+  border-radius:20px;font-size:.8rem;font-weight:700;
+}
+.controls-3d{
+  display:flex;gap:6px;justify-content:center;margin-top:.5rem;flex-wrap:wrap;
+}
+.controls-3d button{
+  background:rgba(108,99,255,.15);color:var(--text);
+  border:1px solid rgba(108,99,255,.3);border-radius:10px;
+  padding:6px 14px;font-size:.75rem;cursor:pointer;transition:.2s;
+}
+.controls-3d button:hover{background:var(--accent);color:#fff}
+
+/* ===== TABLE ===== */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(108,99,255,.15)}
+th{background:rgba(108,99,255,.1);color:var(--accent);font-size:.8rem;text-transform:uppercase}
+td{color:var(--text-dim)}
+tr:hover td{background:rgba(108,99,255,.05)}
+
+/* ===== KALKULATOR ===== */
+.calc-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:1rem;
+}
+@media(max-width:500px){.calc-grid{grid-template-columns:1fr}}
+.input-group{margin-bottom:1rem}
+.input-group label{
+  display:block;font-size:.8rem;color:var(--text-dim);
+  margin-bottom:4px;font-weight:600;
+}
+.input-group input{
+  width:100%;padding:10px 14px;border-radius:10px;
+  border:2px solid rgba(108,99,255,.2);background:var(--bg);
+  color:var(--text);font-size:1rem;transition:.2s;
+  outline:none;
+}
+.input-group input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,.15)}
+.btn-primary{
+  width:100%;padding:12px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;font-size:1rem;font-weight:700;cursor:pointer;
+  transition:.3s;box-shadow:0 4px 16px rgba(108,99,255,.3);
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(108,99,255,.4)}
+.result-box{
+  margin-top:1rem;padding:1rem;background:rgba(0,217,255,.08);
+  border-radius:12px;border:1px solid rgba(0,217,255,.2);
+  text-align:center;
+}
+.result-box .big{
+  font-size:1.8rem;font-weight:800;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.result-box .unit{font-size:.8rem;color:var(--text-dim)}
+
+/* ===== QUIZ ===== */
+.quiz-card{
+  background:linear-gradient(135deg,var(--card),rgba(108,99,255,.05));
+  border:1px solid rgba(108,99,255,.2);
+}
+.option-btn{
+  display:block;width:100%;text-align:left;
+  padding:14px 18px;margin:6px 0;border-radius:12px;
+  border:2px solid rgba(108,99,255,.15);background:var(--bg);
+  color:var(--text);font-size:.95rem;cursor:pointer;
+  transition:.2s;
+}
+.option-btn:hover{border-color:var(--accent);background:rgba(108,99,255,.08)}
+.option-btn.correct{border-color:var(--success);background:rgba(46,213,115,.1);color:var(--success)}
+.option-btn.wrong{border-color:var(--danger);background:rgba(255,71,87,.1);color:var(--danger)}
+.option-btn.disabled{pointer-events:none;opacity:.6}
+.quiz-nav{display:flex;gap:8px;justify-content:center;margin-top:1rem;flex-wrap:wrap}
+.quiz-nav button{
+  width:42px;height:42px;border-radius:12px;border:2px solid rgba(108,99,255,.2);
+  background:var(--card);color:var(--text);font-weight:700;cursor:pointer;
+  transition:.2s;
+}
+.quiz-nav button.active{border-color:var(--accent);background:var(--accent);color:#fff}
+.quiz-nav button.done{border-color:var(--success)}
+.score-display{
+  text-align:center;padding:2rem;
+}
+.score-display .score-num{
+  font-size:4rem;font-weight:900;
+  background:linear-gradient(135deg,var(--gold),#ff6b6b);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+
+/* ===== PROGRESS BAR ===== */
+.progress-bar{
+  height:4px;background:rgba(108,99,255,.1);
+  border-radius:2px;overflow:hidden;margin-bottom:1rem;
+}
+.progress-fill{
+  height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));
+  border-radius:2px;transition:.5s;width:0%;
+}
+
+/* ===== INSTALL PROMPT ===== */
+.install-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--accent);color:#fff;padding:12px 1rem;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  z-index:200;transform:translateY(100%);transition:.4s;
+}
+.install-bar.show{transform:translateY(0)}
+.install-bar button{
+  background:#fff;color:var(--accent);border:none;
+  padding:6px 18px;border-radius:8px;font-weight:700;cursor:pointer;
+}
+
+/* ===== TOAST ===== */
+.toast{
+  position:fixed;top:70px;right:16px;
+  padding:12px 20px;border-radius:12px;font-weight:600;
+  z-index:300;transform:translateX(120%);transition:.4s;
+  background:var(--card);border:1px solid var(--accent);
+}
+.toast.show{transform:translateX(0)}
+.toast.success{border-color:var(--success)}
+.toast.error{border-color:var(--danger)}
+
+/* ===== ANIMATIONS ===== */
+.float{animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:480px){
+  nav button span{display:none}
+  .calc-grid{grid-template-columns:1fr}
+  h2{font-size:1.1rem}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <span class="logo">📦 3D Space</span>
+    <button class="active" onclick="showSection('home')"><span>🏠</span> 3D</button>
+    <button onclick="showSection('materi')"><span>📖</span> Materi</button>
+    <button onclick="showSection('calc')"><span>🧮</span> Kalkulator</button>
+    <button onclick="showSection('quiz')"><span>🔥</span> Kuis</button>
+    <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Theme">🌙</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main>
+
+  <!-- ===== 3D VISUAL ===== -->
+  <section id="home" class="active">
+    <div class="card" style="text-align:center">
+      <h2>🔮 Visualisasi 3D Interaktif</h2>
+      <p style="color:var(--text-dim);margin-bottom:1rem">Geser / Drag untuk memutar 🔄</p>
+      <div class="canvas-wrap">
+        <div class="canvas-box" id="cubeCanvasWrap">
+          <canvas id="cubeCanvas"></canvas>
+          <div class="canvas-label">🟦 KUBUS</div>
+        </div>
+        <div class="canvas-box" id="balokCanvasWrap">
+          <canvas id="balokCanvas"></canvas>
+          <div class="canvas-label">📦 BALOK</div>
+        </div>
+      </div>
+      <div class="controls-3d">
+        <button onclick="resetView()">🏠 Reset</button>
+        <button onclick="autoRotateToggle()">🔄 Auto Rotasi</button>
+        <button onclick="toggleWireframe()">⚡ Wireframe</button>
+        <button onclick="changeColor()">🎨 Warna</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MATERI ===== -->
+  <section id="materi">
+    <div class="card">
+      <h2>📖 Materi Lengkap</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Bangun</th><th>Sifat Utama</th><th>Volume</th><th>Luas Permukaan</th></tr></thead>
+          <tbody>
+            <tr><td><b>🟦 Kubus</b></td><td>6 sisi sama, 12 rusuk sama</td><td>V = s³</td><td>LP = 6s²</td></tr>
+            <tr><td><b>📦 Balok</b></td><td>6 sisi (3 pasang sama)</td><td>V = p×l×t</td><td>LP = 2(pl+pt+lt)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h3>🟦 Kubus</h3>
+      <p>Semua rusuk sama panjang. Semua sisi berbentuk persegi.</p>
+      <ul style="margin:.5rem 0 0 1.2rem;color:var(--text-dim)">
+        <li>Volume: <b>V = s × s × s = s³</b></li>
+        <li>Luas Permukaan: <b>LP = 6 × s²</b></li>
+        <li>Diagonal Ruang: <b>d = s√3</b></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>📦 Balok</h3>
+      <p>Memiliki 3 pasang sisi yang berhadapan sama luas.</p>
+      <ul style="margin:.5rem 0 0 1.2rem;color:var(--text-dim)">
+        <li>Volume: <b>V = p × l × t</b></li>
+        <li>Luas Permukaan: <b>LP = 2(pl + pt + lt)</b></li>
+        <li>Diagonal Ruang: <b>d = √(p²+l²+t²)</b></li>
+      </ul>
+    </div>
+    <div class="card" style="border-left:4px solid var(--gold)">
+      <h3>💡 Tips Mudah</h3>
+      <p>🧊 Kubus = kotak semua sama → tinggal satu sisi</p>
+      <p>📦 Balok = kotak biasa → panjang × lebar × tinggi</p>
+    </div>
+  </section>
+
+  <!-- ===== KALKULATOR ===== -->
+  <section id="calc">
+    <div class="card">
+      <h2>🧮 Kalkulator Interaktif</h2>
+      <div class="calc-grid">
+        <!-- Kubus -->
+        <div>
+          <h3>🟦 Kubus</h3>
+          <div class="input-group">
+            <label>Sisi (s) cm</label>
+            <input type="number" id="cubeS" placeholder="Masukkan sisi..." min="0" step="0.1" value="5">
+          </div>
+          <button class="btn-primary" onclick="calcCube()">Hitung ⚡</button>
+          <div class="result-box" id="cubeResult" style="display:none">
+            <div class="big" id="cubeV"></div><div class="unit">Volume</div>
+            <div style="font-size:1.1rem;margin-top:6px" id="cubeLP"></div><div class="unit">Luas Permukaan</div>
+          </div>
+        </div>
+        <!-- Balok -->
+        <div>
+          <h3>📦 Balok</h3>
+          <div class="input-group"><label>Panjang (p) cm</label><input type="number" id="balokP" value="6"></div>
+          <div class="input-group"><label>Lebar (l) cm</label><input type="number" id="balokL" value="4"></div>
+          <div class="input-group"><label>Tinggi (t) cm</label><input type="number" id="balokT" value="3"></div>
+          <button class="btn-primary" onclick="calcBalok()">Hitung ⚡</button>
+          <div class="result-box" id="balokResult" style="display:none">
+            <div class="big" id="balokV"></div><div class="unit">Volume</div>
+            <div style="font-size:1.1rem;margin-top:6px" id="balokLP"></div><div class="unit">Luas Permukaan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="text-align:center">
+      <h3>📊 Perbandingan</h3>
+      <canvas id="chartCanvas" height="120"></canvas>
+    </div>
+  </section>
+
+  <!-- ===== QUIZ ===== -->
+  <section id="quiz">
+    <div class="card quiz-card">
+      <h2>🔥 Kuis - Uji Pemahaman!</h2>
+      <div class="progress-bar"><div class="progress-fill" id="quizProgress"></div></div>
+      <div id="quizContent"></div>
+      <div class="quiz-nav" id="quizNav"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- INSTALL BAR -->
+<div class="install-bar" id="installBar">
+  <span>📲 Install App ini!</span>
+  <button onclick="installApp()">Install</button>
+  <button onclick="document.getElementById('installBar').classList.remove('show')" style="background:none;color:#fff">✕</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== PWA =====
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();deferredPrompt=e;
+  setTimeout(()=>document.getElementById('installBar').classList.add('show'),2000);
+});
+function installApp(){
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(r=>{if(r.outcome==='accepted')showToast('✅ Terinstall!','success');
+    document.getElementById('installBar').classList.remove('show');
+    deferredPrompt=null;
+  });
+}
+window.addEventListener('appinstalled',()=>{document.getElementById('installBar').classList.remove('show')});
+
+// Register Service Worker
+if('serviceWorker'in navigator){
+  navigator.serviceWorker.register('sw.js').then(()=>console.log('SW registered'));
+}
+
+// ===== NAVIGATION =====
+function showSection(id){
+  document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  event.target.closest('button').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ===== THEME =====
+function toggleTheme(){
+  const html=document.documentElement;
+  html.dataset.theme=html.dataset.theme==='dark'?'light':'dark';
+  document.querySelector('.theme-toggle').textContent=
+    html.dataset.theme==='dark'?'🌙':'☀️';
+}
+
+// ===== TOAST =====
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+type+' show';
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ===== 3D ENGINE =====
+const colors=[['#6C63FF','#00D9FF','#FF6B6B','#FFD700','#2ed573','#ff4757'],
+  ['#FF69B4','#8A2BE2','#00CED1','#FF8C00','#32CD32','#DC143C'],
+  ['#4169E1','#00BFFF','#3CB371','#DAA520','#CD5C5C','#9370DB']];
+let colorSet=0, wireframe=false, autoRot=true, autoRotTimer;
+
+function makeCube(s=1){
+  return {vertices:[
+    [-s,-s,-s],[s,-s,-s],[s,s,-s],[-s,s,-s],
+    [-s,-s,s],[s,-s,s],[s,s,s],[-s,s,s]
+  ],faces:[
+    [0,1,2,3],[4,5,6,7],[0,1,5,4],
+    [2,3,7,6],[0,3,7,4],[1,2,6,5]
+  ]};
+}
+function makeBalok(p=1.5,l=1,t=1){
+  const x=p/2,y=l/2,z=t/2;
+  return {vertices:[
+    [-x,-y,-z],[x,-y,-z],[x,y,-z],[-x,y,-z],
+    [-x,-y,z],[x,-y,z],[x,y,z],[-x,y,z]
+  ],faces:[[0,1,2,3],[4,5,6,7],[0,1,5,4],[2,3,7,6],[0,3,7,4],[1,2,6,5]]};
+}
+
+function render3D(canvasId,obj,rotX,rotY,offsetX=0){
+  const c=document.getElementById(canvasId),ctx=c.getContext('2d');
+  const w=c.width=c.offsetWidth*2,h=c.height=c.offsetHeight*2;
+  ctx.save();ctx.scale(2,2);
+  ctx.fillStyle='#111';ctx.fillRect(0,0,w/2,h/2);
+  const cosX=Math.cos(rotX),sinX=Math.sin(rotX);
+  const cosY=Math.cos(rotY),sinY=Math.sin(rotY);
+  const vs=obj.vertices.map(v=>{
+    let [x,y,z]=v;
+    let x1=x*cosY-z*sinY,z1=x*sinY+z*cosY;
+    let y1=y*cosX-z1*sinX,z2=y*sinX+z1*cosX;
+    return{x:x1,y:y1,z:z2};
+  });
+  const sortedFaces=obj.faces.map((f,i)=>({idx:i,z:f.reduce((s,i)=>s+vs[i].z,0)/4,f}));
+  sortedFaces.sort((a,b)=>b.z-a.z);
+  sortedFaces.forEach(f=>{
+    const pts=f.f.map(i=>{
+      const v=vs[i];
+      return{x:w/4+offsetX+v.x*40,y:h/4-v.y*40};
+    });
+    if(wireframe){
+      ctx.strokeStyle=colors[colorSet][f.idx%6];ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+      pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.closePath();ctx.stroke();
+    }else{
+      const grad=ctx.createLinearGradient(pts[0].x,pts[0].y,pts[2].x,pts[2].y);
+      grad.addColorStop(0,colors[colorSet][f.idx%6]);
+      grad.addColorStop(1,colors[colorSet][(f.idx+1)%6]);
+      ctx.fillStyle=grad;
+      ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+      pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.closePath();ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,.15)';ctx.lineWidth=.5;ctx.stroke();
+    }
+  });
+  ctx.restore();
+}
+
+let rotCubeX=.5,rotCubeY=.5,rotBalokX=.5,rotBalokY=.5;
+let dragging=false,dragStart={x:0,y:0},activeCanvas='';
+
+['cubeCanvas','balokCanvas'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('mousedown',e=>{dragging=true;activeCanvas=id;
+    dragStart={x:e.clientX,y:e.clientY}});
+  el.addEventListener('mousemove',e=>{
+    if(!dragging||activeCanvas!==id)return;
+    const dx=(e.clientX-dragStart.x)*0.01,dy=(e.clientY-dragStart.y)*0.01;
+    if(id==='cubeCanvas'){rotCubeY+=dx;rotCubeX+=dy}
+    else{rotBalokY+=dx;rotBalokX+=dy}
+    dragStart={x:e.clientX,y:e.clientY};
+  });
+  el.addEventListener('mouseup',()=>{dragging=false;activeCanvas=''});
+  el.addEventListener('mouseleave',()=>{dragging=false;activeCanvas=''});
+  // Touch support
+  el.addEventListener('touchstart',e=>{dragging=true;activeCanvas=id;
+    dragStart={x:e.touches[0].clientX,y:e.touches[0].clientY}},{passive:true});
+  el.addEventListener('touchmove',e=>{
+    if(!dragging||activeCanvas!==id)return;
+    const dx=(e.touches[0].clientX-dragStart.x)*0.01,
+      dy=(e.touches[0].clientY-dragStart.y)*0.01;
+    if(id==='cubeCanvas'){rotCubeY+=dx;rotCubeX+=dy}
+    else{rotBalokY+=dx;rotBalokX+=dy}
+    dragStart={x:e.touches[0].clientX,y:e.touches[0].clientY};
+  },{passive:true});
+  el.addEventListener('touchend',()=>{dragging=false;activeCanvas=''});
+});
+
+function renderLoop(){
+  if(autoRot){
+    rotCubeY+=0.008;rotCubeX+=0.004;
+    rotBalokY+=0.005;rotBalokX+=0.006;
+  }
+  render3D('cubeCanvas',makeCube(1),rotCubeX,rotCubeY);
+  render3D('balokCanvas',makeBalok(1.5,1,1),rotBalokX,rotBalokY,0);
+  requestAnimationFrame(renderLoop);
+}
+renderLoop();
+
+function resetView(){rotCubeX=rotCubeY=rotBalokX=rotBalokY=.5;autoRot=true}
+function autoRotateToggle(){autoRot=!autoRot;
+  showToast(autoRot?'🔄 Auto rotasi ON':'⏸ Auto rotasi OFF',autoRot?'success':'')}
+function toggleWireframe(){wireframe=!wireframe;showToast(wireframe?'⚡ Wireframe':'🔲 Solid')}
+function changeColor(){colorSet=(colorSet+1)%colors.length;
+  showToast('🎨 Warna: Set '+ (colorSet+1),'success')}
+
+// ===== KALKULATOR =====
+function calcCube(){
+  const s=parseFloat(document.getElementById('cubeS').value);
+  if(!s||s<=0){showToast('⚠️ Masukkan angka positif!','error');return}
+  const v=s*s*s,lp=6*s*s;
+  document.getElementById('cubeV').textContent=v.toFixed(2)+' cm³';
+  document.getElementById('cubeLP').textContent=lp.toFixed(2)+' cm²';
+  document.getElementById('cubeResult').style.display='block';
+  drawChart(s,s,s,v,lp,'cube');
+}
+function calcBalok(){
+  const p=parseFloat(document.getElementById('balokP').value);
+  const l=parseFloat(document.getElementById('balokL').value);
+  const t=parseFloat(document.getElementById('balokT').value);
+  if(!p||!l||!t||p<=0||l<=0||t<=0){showToast('⚠️ Semua harus positif!','error');return}
+  const v=p*l*t,lp=2*(p*l+p*t+l*t);
+  document.getElementById('balokV').textContent=v.toFixed(2)+' cm³';
+  document.getElementById('balokLP').textContent=lp.toFixed(2)+' cm²';
+  document.getElementById('balokResult').style.display='block';
+  drawChart(p,l,t,v,lp,'balok');
+}
+function drawChart(a,b,c,v,lp,type){
+  const ctx=document.getElementById('chartCanvas').getContext('2d');
+  const w=ctx.canvas.width=ctx.canvas.offsetWidth*2,h=120*2;
+  ctx.scale(2,2);
+  const max=Math.max(v,lp),barW=60,gap=30;
+  function drawBar(x,val,clr){
+    const bh=Math.min((val/max)*80,80);
+    ctx.fillStyle=clr;
+    ctx.beginPath();ctx.roundRect(x,100-bh,barW,bh,8);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='10px '+window.getComputedStyle(document.body).fontFamily;
+    ctx.fillText(val.toFixed(0),x+barW/2-10,90-bh);
+  }
+  ctx.clearRect(0,0,w/2,h/2);
+  ctx.fillStyle='rgba(108,99,255,.1)';ctx.fillRect(0,0,w/2,h/2);
+  drawBar(30,v,'#6C63FF');
+  drawBar(30+barW+gap,lp,'#00D9FF');
+  ctx.fillStyle='#aaa';ctx.font='9px '+window.getComputedStyle(document.body).fontFamily;
+  ctx.fillText('Volume',30+barW/2-12,112);
+  ctx.fillText('Luas Permukaan',30+barW+gap+barW/2-20,112);
+  ctx.restore();
+}
+
+// ===== QUIZ =====
+const quizData=[
+  {
+    q:'Volume kubus dengan sisi 7 cm adalah...',
+    opts:['21 cm³','343 cm³','294 cm³','49 cm³'],
+    ans:1,explain:'V = 7³ = 343 cm³'
+  },
+  {
+    q:'Luas permukaan balok dengan p=4,l=3,t=5 adalah...',
+    opts:['47 cm²','94 cm²','60 cm²','120 cm²'],
+    ans:1,explain:'LP = 2(4×3 + 4×5 + 3×5) = 2(12+20+15)=94 cm²'
+  },
+  {
+    q:'Perbedaan utama kubus dan balok?',
+    opts:['Jumlah sisi berbeda','Rusuk kubus semua sama panjang','Balok tidak punya volume','Tidak ada bedanya'],
+    ans:1,explain:'Kubus semua rusuk sama, balok 3 kelompok berbeda'
+  },
+  {
+    q:'Sebuah kubus volume 125 cm³, sisi = ?',
+    opts:['5 cm','25 cm','15 cm','10 cm'],
+    ans:0,explain:'s = ³√125 = 5 cm'
+  },
+  {
+    q:'Diagonal ruang kubus sisi 2 cm = ?',
+    opts:['2√2','2√3','4','√6'],
+    ans:1,explain:'d = s√3 = 2√3'
+  }
+];
+
+let quizState={current:0,answers:Array(5).fill(-1),done:false,score:0};
+function renderQuiz(){
+  const s=quizState,data=quizData[s.current];
+  const html=`<h3 style="margin:1rem 0">Soal ${s.current+1}/5</h3>
+    <p style="font-size:1.05rem;margin-bottom:1rem">${data.q}</p>`+
+    data.opts.map((o,i)=>{
+      const cls='option-btn'+
+        (s.answers[s.current]!==-1?i===data.ans?' correct':i===s.answers[s.current]?' wrong':' disabled':'');
+      return`<button class="${cls}" onclick="selectAnswer(${i})" ${s.answers[s.current]!==-1?'disabled':''}>${o}</button>`;
+    }).join('')+
+    (s.answers[s.current]!==-1?`<p style="margin-top:1rem;color:var(--accent2);font-size:.85rem">💡 ${data.explain}</p>`:'');
+  document.getElementById('quizContent').innerHTML=html;
+  document.getElementById('quizProgress').style.width=((s.current+1)/5)*100+'%';
+  // nav
+  let navHtml='';
+  quizData.forEach((_,i)=>{
+    let cls='';if(i===s.current)cls='active';else if(s.answers[i]!==-1)cls='done';
+    navHtml+=`<button class="${cls}" onclick="goToQuestion(${i})">${i+1}</button>`;
+  });
+  if(s.answers.every(a=>a!==-1)){
+    navHtml+=`<button class="btn-primary" onclick="showScore()" style="width:auto;padding:0 20px;margin-left:8px">🏆 Lihat Skor</button>`;
+  }
+  document.getElementById('quizNav').innerHTML=navHtml;
+}
+function selectAnswer(i){
+  const s=quizState,d=quizData[s.current];
+  s.answers[s.current]=i;
+  if(i===d.ans)s.score++;
+  renderQuiz();
+  setTimeout(()=>{
+    if(s.current<4){s.current++;renderQuiz()}
+  },800);
+}
+function goToQuestion(i){quizState.current=i;renderQuiz()}
+function showScore(){
+  const s=quizState,pct=(s.score/5)*100;
+  document.getElementById('quizContent').innerHTML=
+    `<div class="score-display">
+      <div class="score-num">${s.score}/5</div>
+      <p style="font-size:1.1rem;margin:.5rem 0">${pct>=80?'🌟 Hebat!':pct>=60?'👍 Bagus!':'📖 Pelajari lagi!'}</p>
+      <p style="color:var(--text-dim)">Skor: ${pct.toFixed(0)}%</p>
+      <button class="btn-primary" style="width:auto;margin-top:1rem" onclick="restartQuiz()">🔄 Coba Lagi</button>
+    </div>`;
+  document.getElementById('quizProgress').style.width='100%';
+}
+function restartQuiz(){
+  quizState={current:0,answers:Array(5).fill(-1),done:false,score:0};
+  renderQuiz();
+}
+renderQuiz();
+
+// ===== INIT =====
+document.getElementById('cubeS').addEventListener('keydown',e=>{if(e.key==='Enter')calcCube()});
+</script>
+
+</body>
+</html>
